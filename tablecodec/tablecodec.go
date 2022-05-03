@@ -98,6 +98,23 @@ func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) {
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
+	if !key.HasPrefix(tablePrefix) {
+		err = errors.New("")
+		return
+	}
+	content := key[tablePrefixLength:]
+	// TODO decode handler
+
+	content, tableID, err = codec.DecodeInt(content)
+	if err != nil {
+		return
+	}
+	content2 := key[prefixLen:]
+	content, handle, err = codec.DecodeInt(content2)
+	if err != nil {
+		return
+	}
+
 	return
 }
 
@@ -148,6 +165,20 @@ func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
+	if !key.HasPrefix(tablePrefix) {
+		err = errors.New("")
+		return
+	}
+	var remainBuf []byte
+	_, tableID, err = codec.DecodeInt(key[tablePrefixLength:])
+	if err != nil {
+		return
+	}
+	remainBuf, indexID, err = codec.DecodeInt(key[prefixLen:])
+	if err != nil {
+		return
+	}
+	indexValues = remainBuf
 	return tableID, indexID, indexValues, nil
 }
 
