@@ -41,6 +41,7 @@ type joinReorderGreedySolver struct {
 // For the nodes and join trees which don't have a join equal condition to
 // connect them, we make a bushy join tree to do the cartesian joins finally.
 func (s *joinReorderGreedySolver) solve(joinNodePlans []LogicalPlan) (LogicalPlan, error) {
+	// 遍历所有的Join计划，然后去by Plan解开计划树，累加开销
 	for _, node := range joinNodePlans {
 		_, err := node.recursiveDeriveStats()
 		if err != nil {
@@ -51,11 +52,13 @@ func (s *joinReorderGreedySolver) solve(joinNodePlans []LogicalPlan) (LogicalPla
 			cumCost: s.baseNodeCumCost(node),
 		})
 	}
+	// 对计划列表的开销进行从小到大的排序
 	sort.SliceStable(s.curJoinGroup, func(i, j int) bool {
 		return s.curJoinGroup[i].cumCost < s.curJoinGroup[j].cumCost
 	})
 
 	var cartesianGroup []LogicalPlan
+	// 重新构建JoinTree到cartesianGroup
 	for len(s.curJoinGroup) > 0 {
 		newNode, err := s.constructConnectedJoinTree()
 		if err != nil {
